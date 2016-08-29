@@ -1,15 +1,28 @@
 '''
+
+* textile format: http://www.redmine.org/projects/redmine/wiki/RedmineTextFormattingTextile#External-links
 '''
 
 import argparse
 import pyperclip
 from zim.formats import get_parser
+from zim.formats import EMPHASIS, STRONG, MARK, STRIKE, VERBATIM, TAG, SUBSCRIPT, SUPERSCRIPT
 from zim.formats.plain import Dumper as TextDumper
 from zim.parsing import url_re
 
 
 class Dumper(TextDumper):
     '''Inherit from wiki format Dumper class, only overload things that are different'''
+
+    TAGS = {EMPHASIS:    ('_', '_'),
+            STRONG:      ('*', '*'),
+            MARK:        ('+', '+'),
+            STRIKE:      ('-', '-'),
+            VERBATIM:    ("<pre>", "</pre>"),
+            TAG:         ('@', '@'),
+            SUBSCRIPT:   ('~', '~'),
+            SUPERSCRIPT: ('^', '^'),
+            }
 
     def dump_link(self, tag, attrib, strings=None):
         href = attrib['href']
