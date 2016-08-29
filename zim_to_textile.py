@@ -6,6 +6,7 @@
 import argparse
 import pyperclip
 from zim.formats import get_parser
+from zim.formats import UNCHECKED_BOX, XCHECKED_BOX, CHECKED_BOX, BULLET, BULLETLIST, NUMBEREDLIST
 from zim.formats import EMPHASIS, STRONG, MARK, STRIKE, VERBATIM, TAG, SUBSCRIPT, SUPERSCRIPT
 from zim.formats.plain import Dumper as TextDumper
 from zim.parsing import url_re
@@ -13,6 +14,11 @@ from zim.parsing import url_re
 
 class Dumper(TextDumper):
     '''Inherit from wiki format Dumper class, only overload things that are different'''
+    BULLETS = {UNCHECKED_BOX:	u'\u2610',
+               XCHECKED_BOX:	u'\u2612',
+               CHECKED_BOX:	u'\u2611',
+               BULLET:          u'*',
+               }
 
     TAGS = {EMPHASIS:    ('_', '_'),
             STRONG:      ('*', '*'),
@@ -37,6 +43,31 @@ class Dumper(TextDumper):
         heading = u''.join(strings)
         return ['h%d. ' % level, heading]
 
+    def dump_ul(self, tag, attrib, strings):
+        return strings
+
+    def dump_ol(self, tag, attrib, strings):
+        return strings
+
+    def dump_li(self, tag, attrib, strings):
+        level = self._count_list_level()
+        if self.context[-1].tag == NUMBEREDLIST:
+            bullet = u'#' * level
+        else:
+            bullet = self.BULLETS[BULLET] * level
+            if 'bullet' in attrib and attrib['bullet'] != BULLET and attrib['bullet'] in self.BULLETS:
+                bullet += (' ' + self.BULLETS[attrib['bullet']])
+
+        return (bullet, ' ') + tuple(strings) + ('\n',)
+
+    def _count_list_level(self):
+        level = 0
+        for i in range(-1, -len(self.context) - 1, -1):
+            if self.context[i].tag in (BULLETLIST, NUMBEREDLIST):
+                level += 1
+            else:
+                break
+        return level
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
