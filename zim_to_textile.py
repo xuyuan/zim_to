@@ -19,6 +19,11 @@ class Dumper(TextDumper):
         else:
             return ['"%s":%s' % (text, href)]
 
+    def dump_h(self, tag, attrib, strings):
+        level = int(attrib['level'])
+        heading = u''.join(strings)
+        return ['h%d. ' % level, heading]
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
