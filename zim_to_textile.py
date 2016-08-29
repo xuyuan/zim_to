@@ -41,7 +41,7 @@ class Dumper(TextDumper):
     def dump_h(self, tag, attrib, strings):
         level = int(attrib['level'])
         heading = u''.join(strings)
-        return ['h%d. ' % level, heading]
+        return ['h%d. ' % level, heading, '\n']
 
     def dump_ul(self, tag, attrib, strings):
         return strings
