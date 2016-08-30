@@ -69,6 +69,16 @@ class Dumper(TextDumper):
                 break
         return level
 
+    def dump_img(self, tag, attrib, strings=None):
+        src = attrib['src']
+        if src.startswith('./'):
+            src = src[2:]
+        text = attrib.get('alt', '')
+        if text:
+            return ['!%s(%s)!\n' % (src, text)]
+        else:
+            return ['!%s!\n' % src]
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-T', dest='wiki_text', help='the selected text including wiki formatting')
@@ -76,7 +86,10 @@ if __name__ == '__main__':
 
     zim_parser = get_parser('wiki')
     tree = zim_parser.parse(args.wiki_text)
-    dumper = Dumper()
-    lines = dumper.dump(tree)
-    textile_text = ''.join(lines).encode('utf-8')
-    pyperclip.copy(textile_text)
+    try:
+        dumper = Dumper()
+        lines = dumper.dump(tree)
+        textile_text = ''.join(lines).encode('utf-8')
+        pyperclip.copy(textile_text)
+    except Exception as e:
+        pyperclip.copy(e.message)
