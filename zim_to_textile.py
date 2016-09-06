@@ -1,5 +1,7 @@
 '''
 
+command for zim custom tool: python path/to/zim_to_textile.py -T %T -f %f
+
 * textile format: http://www.redmine.org/projects/redmine/wiki/RedmineTextFormattingTextile#External-links
 '''
 
@@ -92,10 +94,15 @@ class Dumper(TextDumper):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-T', dest='wiki_text', help='the selected text including wiki formatting')
+    parser.add_argument('-f', dest='file', help='the page source as temporary file')
     args = parser.parse_args()
 
     zim_parser = get_parser('wiki')
-    tree = zim_parser.parse(args.wiki_text)
+    if args.wiki_text:
+        wiki_text = args.wiki_text
+    else:
+        wiki_text = open(args.file).read()
+    tree = zim_parser.parse(wiki_text)
     try:
         dumper = Dumper()
         lines = dumper.dump(tree)
