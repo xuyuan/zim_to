@@ -79,6 +79,16 @@ class Dumper(TextDumper):
         else:
             return ['!%s!\n' % src]
 
+    def dump_object(self, tag, attrib, strings=None):
+        if 'type' in attrib:
+            t = attrib['type']
+            if t == 'code':
+                c = attrib.get('lang', "")
+                if c == "sh":
+                    c = "python"  # missing support of sh, see http://coderay.rubychan.de/
+                return ['<pre><code class="%s">\n' % c] + strings + ['</code></pre>\n']
+        return super(Dumper, self).dump_object(tag, attrib, strings)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-T', dest='wiki_text', help='the selected text including wiki formatting')
