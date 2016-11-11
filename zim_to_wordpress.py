@@ -9,6 +9,12 @@ import pyperclip
 from zim.formats import get_parser, StubLinker
 from zim.formats.html import Dumper as TextDumper
 
+# Not all the languages are supported in wordpress plugin
+# Or the names are different
+# see http://alexgorbatchev.com/SyntaxHighlighter/manual/brushes/
+LANG_MAP = {'sh': 'bash',
+            'ini': 'text'}
+
 
 class Dumper(TextDumper):
     '''Inherit from html format Dumper class, only overload things that are different'''
@@ -17,8 +23,7 @@ class Dumper(TextDumper):
             t = attrib['type']
             if t == 'code':
                 c = attrib.get('lang', "")
-                if c == "sh":
-                    c = "bash"  # see http://alexgorbatchev.com/SyntaxHighlighter/manual/brushes/
+                c = LANG_MAP.get(c, c)
                 return ['[%s]\n' % c] + strings + ['[/%s]\n' % c]
         return super(Dumper, self).dump_object(tag, attrib, strings)
 
