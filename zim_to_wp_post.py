@@ -6,13 +6,16 @@
 import argparse
 from wordpress_xmlrpc import Client, WordPressPost
 from wordpress_xmlrpc.methods.posts import NewPost
-from zim_to_wordpress import Dumper, get_parser, StubLinker
+from zim_to_wordpress import Dumper
+from zim.formats import get_parser, StubLinker, TAG
 
 
 class WordPressPostDumper(Dumper):
     def __init__(self, linker):
         super(WordPressPostDumper, self).__init__(linker=linker)
         self.wp_title = None
+        self.wp_tags = []
+        del self.TAGS[TAG]  # --> dump_tag
 
     def dump_h(self, tag, attrib, strings):
         # get title for wordpress post
@@ -20,6 +23,8 @@ class WordPressPostDumper(Dumper):
             self.wp_title = strings[0]
         super(WordPressPostDumper, self).dump_h(tag, attrib, strings)
 
+    def dump_tag(self, tag, attrib, strings):
+        self.wp_tags.append(attrib['name'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -47,10 +52,10 @@ if __name__ == '__main__':
     post = WordPressPost()
     post.title = dumper.wp_title
     post.content = wordpress_text
-    post.terms_names = {'post_tag': ['test'],
+    post.terms_names = {'post_tag': dumper.wp_tags,
                         'category': []
                         }
-    #wp.call(NewPost(post))
+    wp.call(NewPost(post))
 
 
     
