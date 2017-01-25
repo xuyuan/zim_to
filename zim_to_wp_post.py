@@ -21,10 +21,18 @@ class WordPressPostDumper(Dumper):
         # get title for wordpress post
         if self.wp_title is None and attrib['level'] == 1:
             self.wp_title = strings[0]
-        super(WordPressPostDumper, self).dump_h(tag, attrib, strings)
+            return []
+        return super(WordPressPostDumper, self).dump_h(tag, attrib, strings)
 
     def dump_tag(self, tag, attrib, strings):
         self.wp_tags.append(attrib['name'])
+
+    def dump_p(self, tag, attrib, strings):
+        #print tag, attrib, strings
+        if strings[0].startswith('Content-Type: text/x-zim-wiki'):
+            strings = []
+        return strings
+        #assert False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -42,8 +50,8 @@ if __name__ == '__main__':
     linker = StubLinker(source_dir=args.source_dir)
     dumper = WordPressPostDumper(linker=linker)
     lines = dumper.dump(tree)
-    lines = lines[6:]  # skip zim-wiki header
     wordpress_text = ''.join(lines).encode('utf-8')
+    print wordpress_text
 
     assert dumper.wp_title is not None
 
@@ -55,7 +63,7 @@ if __name__ == '__main__':
     post.terms_names = {'post_tag': dumper.wp_tags,
                         'category': []
                         }
-    wp.call(NewPost(post))
+    #wp.call(NewPost(post))
 
 
     
