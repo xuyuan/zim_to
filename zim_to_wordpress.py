@@ -44,7 +44,7 @@ if __name__ == '__main__':
         linker = StubLinker(source_dir=args.source_dir)
         dumper = Dumper(linker=linker)
         lines = dumper.dump(tree)
-        textile_text = ''.join(lines).encode('utf-8')
-        pyperclip.copy(textile_text)
+        wordpress_text = ''.join(lines).encode('utf-8')
+        pyperclip.copy(wordpress_text)
     except Exception as e:
         pyperclip.copy(e.message)
