@@ -15,6 +15,7 @@ class WordPressPostDumper(Dumper):
         super(WordPressPostDumper, self).__init__(linker=linker)
         self.wp_title = None
         self.wp_tags = []
+        self.wp_p_count = 0
         del self.TAGS[TAG]  # --> dump_tag
 
     def dump_h(self, tag, attrib, strings):
@@ -28,11 +29,16 @@ class WordPressPostDumper(Dumper):
         self.wp_tags.append(attrib['name'])
 
     def dump_p(self, tag, attrib, strings):
-        #print tag, attrib, strings
-        if strings[0].startswith('Content-Type: text/x-zim-wiki'):
+        if strings[0].startswith('Content-Type: text/x-zim-wiki') or strings == [u' ', u'<br>\n']:
             strings = []
+        else:
+            self.wp_p_count += 1
+
+        if self.wp_p_count == 1:
+            # insert read more tag after first p
+            strings.append('<!--more-->')
+
         return strings
-        #assert False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -51,7 +57,7 @@ if __name__ == '__main__':
     dumper = WordPressPostDumper(linker=linker)
     lines = dumper.dump(tree)
     wordpress_text = ''.join(lines).encode('utf-8')
-    print wordpress_text
+    #print wordpress_text
 
     assert dumper.wp_title is not None
 
@@ -63,7 +69,5 @@ if __name__ == '__main__':
     post.terms_names = {'post_tag': dumper.wp_tags,
                         'category': []
                         }
-    #wp.call(NewPost(post))
+    wp.call(NewPost(post))
 
-
-    
