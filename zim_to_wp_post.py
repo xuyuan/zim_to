@@ -3,11 +3,15 @@
 
 '''publish zim note to wordpress as post
 '''
+import os
 import argparse
 from wordpress_xmlrpc import Client, WordPressPost
+from wordpress_xmlrpc.compat import xmlrpc_client
 from wordpress_xmlrpc.methods.posts import NewPost
+from wordpress_xmlrpc.methods.media import UploadFile
 from zim_to_wordpress import Dumper
-from zim.formats import get_parser, StubLinker, TAG
+from zim.formats import get_parser, BaseLinker, TAG
+from zim.parsing import link_type
 
 
 class WordPressPostDumper(Dumper):
@@ -40,6 +44,47 @@ class WordPressPostDumper(Dumper):
 
         return strings
 
+
+class WordPressLinker(BaseLinker):
+    def __init__(self, source_dir, wordpress_client):
+        self.source_dir = source_dir
+        self.wordpress_client = wordpress_client
+
+    def link(self, link):
+        type = link_type(link)
+        if type == 'mailto' and not link.startswith('mailto:'):
+            return 'mailto:' + link
+        elif type == 'interwiki':
+            return 'interwiki:' + link
+        else:
+            return link
+
+    def img(self, src):
+        filename = self.resolve_source_file(src)
+        ext = os.path.splitext(filename)[-1]
+        data = {'name': os.path.basename(filename),
+                'type': 'image/' + ext[1:]}
+        with open(filename, 'rb') as img:
+            data['bits'] = xmlrpc_client.Binary(img.read())
+        print 'upload image', filename
+        response = self.wordpress_client.call(UploadFile(data))
+        return response['url']
+
+    def resolve_source_file(self, link):
+        if os.path.isabs(link):
+            return link
+
+        return os.path.join(self.source_dir, link)
+
+    def resource(self, path):
+        return path
+
+    def page_object(self, path):
+        return path.name
+
+    def file_object(self, file):
+        return file.name
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-w', dest='wordpress', help='url of wordpress site')
@@ -53,15 +98,16 @@ if __name__ == '__main__':
     zim_parser = get_parser('wiki')
     wiki_text = open(args.file).read()
     tree = zim_parser.parse(wiki_text)
-    linker = StubLinker(source_dir=args.source_dir)
+
+    wp = Client('http://%s/xmlrpc.php' % args.wordpress, args.username, args.password)
+
+    linker = WordPressLinker(args.source_dir, wp)
     dumper = WordPressPostDumper(linker=linker)
     lines = dumper.dump(tree)
     wordpress_text = ''.join(lines).encode('utf-8')
     #print wordpress_text
 
     assert dumper.wp_title is not None
-
-    wp = Client('http://%s/xmlrpc.php' % args.wordpress, args.username, args.password)
 
     post = WordPressPost()
     post.title = dumper.wp_title
