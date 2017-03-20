@@ -33,16 +33,24 @@ class WordPressPostDumper(Dumper):
         self.wp_tags.append(attrib['name'])
 
     def dump_p(self, tag, attrib, strings):
-        if strings[0].startswith('Content-Type: text/x-zim-wiki') or strings == [u' ', u'<br>\n']:
-            strings = []
-        else:
+        if self.is_content(strings):
             self.wp_p_count += 1
+        else:
+            strings = []
 
         if self.wp_p_count == 1:
             # insert read more tag after first p
             strings.append('<!--more-->')
 
         return strings
+
+    def is_content(self, strings):
+        if strings[0].startswith('Content-Type: text/x-zim-wiki'):
+            return False
+        for s in strings:
+            if s not in [u' ', u'<br>\n']:
+                return True
+        return False
 
 
 class WordPressLinker(BaseLinker):
@@ -66,9 +74,11 @@ class WordPressLinker(BaseLinker):
                 'type': 'image/' + ext[1:]}
         with open(filename, 'rb') as img:
             data['bits'] = xmlrpc_client.Binary(img.read())
-        print 'upload image', filename
-        response = self.wordpress_client.call(UploadFile(data))
-        return response['url']
+        #print 'upload image', filename
+        if self.wordpress_client:
+            response = self.wordpress_client.call(UploadFile(data))
+            return response['url']
+        return src
 
     def resolve_source_file(self, link):
         if os.path.isabs(link):
@@ -99,7 +109,10 @@ if __name__ == '__main__':
     wiki_text = open(args.file).read()
     tree = zim_parser.parse(wiki_text)
 
-    wp = Client('http://%s/xmlrpc.php' % args.wordpress, args.username, args.password)
+    if args.wordpress:
+        wp = Client('http://%s/xmlrpc.php' % args.wordpress, args.username, args.password)
+    else:
+        wp = None
 
     source_dir = os.path.splitext(args.file)[0]
     linker = WordPressLinker(source_dir, wp)
@@ -117,5 +130,8 @@ if __name__ == '__main__':
     post.terms_names = {'post_tag': dumper.wp_tags,
                         'category': []
                         }
-    wp.call(NewPost(post))
+    if wp:
+        wp.call(NewPost(post))
+    else:
+        print post.content
 
