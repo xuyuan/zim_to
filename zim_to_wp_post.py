@@ -74,7 +74,7 @@ class WordPressLinker(BaseLinker):
         if os.path.isabs(link):
             return link
 
-        return os.path.join(self.source_dir, link)
+        return os.path.normpath(os.path.join(self.source_dir, link))
 
     def resource(self, path):
         return path
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', dest='username', help='username of wordpress site')
     parser.add_argument('-p', dest='password', help='password of wordpress site')
     parser.add_argument('-f', dest='file', help='the page source as temporary file')
-    parser.add_argument('-D', dest='source_dir', help='the document root')
+    #parser.add_argument('-D', dest='source_dir', help='the document root')
 
     args = parser.parse_args()
 
@@ -101,7 +101,8 @@ if __name__ == '__main__':
 
     wp = Client('http://%s/xmlrpc.php' % args.wordpress, args.username, args.password)
 
-    linker = WordPressLinker(args.source_dir, wp)
+    source_dir = os.path.splitext(args.file)[0]
+    linker = WordPressLinker(source_dir, wp)
     dumper = WordPressPostDumper(linker=linker)
     lines = dumper.dump(tree)
     wordpress_text = ''.join(lines).encode('utf-8')
@@ -112,6 +113,7 @@ if __name__ == '__main__':
     post = WordPressPost()
     post.title = dumper.wp_title
     post.content = wordpress_text
+    post.comment_status = 'open'  # allow comments
     post.terms_names = {'post_tag': dumper.wp_tags,
                         'category': []
                         }
