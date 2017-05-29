@@ -13,7 +13,8 @@ from zim.formats.html import Dumper as TextDumper
 # Or the names are different
 # see http://alexgorbatchev.com/SyntaxHighlighter/manual/brushes/
 LANG_MAP = {'sh': 'bash',
-            'ini': 'text'}
+            'ini': 'text',
+            'cmake': 'text'}
 
 
 class Dumper(TextDumper):
